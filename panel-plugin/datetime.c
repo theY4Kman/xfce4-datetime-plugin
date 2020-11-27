@@ -200,25 +200,13 @@ static gboolean datetime_query_tooltip(GtkWidget *widget,
   gchar *format = NULL;
   guint wake_interval;  /* milliseconds to next update */
 
-  switch(datetime->layout)
-  {
-    case LAYOUT_TIME:
-      format = datetime->date_format;
-      break;
-    case LAYOUT_DATE:
-      format = datetime->time_format;
-      break;
-    default:
-      break;
-  }
-
-  if (format == NULL)
+  if (datetime->tooltip_format == NULL)
     return FALSE;
 
   g_get_current_time(&timeval);
   current = localtime((time_t *)&timeval.tv_sec);
 
-  utf8str = datetime_do_utf8strftime(format, current);
+  utf8str = datetime_do_utf8strftime(datetime->tooltip_format, current);
   gtk_tooltip_set_text(tooltip, utf8str);
   g_free(utf8str);
 
@@ -484,16 +472,17 @@ void datetime_apply_layout(t_datetime *datetime, t_layout layout)
   }
   switch(datetime->layout)
   {
-    case LAYOUT_DATE:
-    case LAYOUT_TIME:
+//    case LAYOUT_DATE:
+//    case LAYOUT_TIME:
+    default:
       gtk_widget_set_has_tooltip(GTK_WIDGET(datetime->button), TRUE);
       datetime->tooltip_handler_id = g_signal_connect(datetime->button,
                              "query-tooltip",
                              G_CALLBACK(datetime_query_tooltip), datetime);
       break;
 
-    default:
-      gtk_widget_set_has_tooltip(GTK_WIDGET(datetime->button), FALSE);
+//    default:
+//      gtk_widget_set_has_tooltip(GTK_WIDGET(datetime->button), FALSE);
   }
 
   /* set order based on layout-selection */
@@ -560,6 +549,24 @@ void datetime_apply_format(t_datetime *datetime,
 }
 
 /*
+ * set the tooltip format
+ */
+void datetime_apply_tooltip(t_datetime *datetime,
+    const gchar *tooltip_format)
+{
+  if (datetime == NULL)
+    return;
+
+  if (tooltip_format != NULL)
+  {
+    g_free(datetime->tooltip_format);
+    datetime->tooltip_format = g_strdup(tooltip_format);
+  }
+
+  datetime_set_update_interval(datetime);
+}
+
+/*
  * Function only called by the signal handler.
  */
 static int datetime_set_size(XfcePanelPlugin *plugin,
@@ -578,7 +585,7 @@ static void datetime_read_rc_file(XfcePanelPlugin *plugin, t_datetime *dt)
   gchar *file;
   XfceRc *rc = NULL;
   t_layout layout;
-  const gchar *date_font, *time_font, *date_format, *time_format;
+  const gchar *date_font, *time_font, *date_format, *time_format, *tooltip_format;
 
   /* load defaults */
   layout = LAYOUT_DATE_TIME;
@@ -586,6 +593,7 @@ static void datetime_read_rc_file(XfcePanelPlugin *plugin, t_datetime *dt)
   time_font = "Bitstream Vera Sans 8";
   date_format = "%Y-%m-%d";
   time_format = "%H:%M";
+  tooltip_format = "%H:%M:%S";
 
   /* open file */
   if((file = xfce_panel_plugin_lookup_rc_file(plugin)) != NULL)
@@ -600,6 +608,7 @@ static void datetime_read_rc_file(XfcePanelPlugin *plugin, t_datetime *dt)
       time_font   = xfce_rc_read_entry(rc, "time_font", time_font);
       date_format = xfce_rc_read_entry(rc, "date_format", date_format);
       time_format = xfce_rc_read_entry(rc, "time_format", time_format);
+      tooltip_format = xfce_rc_read_entry(rc, "tooltip_format", tooltip_format);
     }
   }
 
@@ -607,6 +616,7 @@ static void datetime_read_rc_file(XfcePanelPlugin *plugin, t_datetime *dt)
   time_font   = g_strdup(time_font);
   date_format = g_strdup(date_format);
   time_format = g_strdup(time_format);
+  tooltip_format = g_strdup(tooltip_format);
 
   if(rc != NULL)
     xfce_rc_close(rc);
@@ -615,6 +625,7 @@ static void datetime_read_rc_file(XfcePanelPlugin *plugin, t_datetime *dt)
   datetime_apply_layout(dt, layout);
   datetime_apply_font(dt, date_font, time_font);
   datetime_apply_format(dt, date_format, time_format);
+  datetime_apply_tooltip(dt, tooltip_format);
 }
 
 /*
@@ -638,6 +649,7 @@ void datetime_write_rc_file(XfcePanelPlugin *plugin, t_datetime *dt)
     xfce_rc_write_entry(rc, "time_font", dt->time_font);
     xfce_rc_write_entry(rc, "date_format", dt->date_format);
     xfce_rc_write_entry(rc, "time_format", dt->time_format);
+    xfce_rc_write_entry(rc, "tooltip_format", dt->tooltip_format);
 
     xfce_rc_close(rc);
   }

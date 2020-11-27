@@ -54,6 +54,7 @@ typedef struct {
   gchar *time_font;
   gchar *date_format;
   gchar *time_format;
+  gchar *tooltip_format;
   t_layout layout;
 
   /* option widgets */
@@ -69,6 +70,8 @@ typedef struct {
   GtkWidget *time_font_selector;
   GtkWidget *time_format_combobox;
   GtkWidget *time_format_entry;
+  GtkWidget *tooltip_frame;
+  GtkWidget *tooltip_format_entry;
 
   /* popup calendar */
   GtkWidget *cal;
@@ -91,6 +94,10 @@ void
 datetime_apply_format(t_datetime *datetime,
     const gchar *date_format,
     const gchar *time_format);
+
+void
+datetime_apply_tooltip(t_datetime *datetime,
+    const gchar *tooltip_format);
 
 void
 datetime_apply_layout(t_datetime *datetime,

@@ -290,6 +290,8 @@ datetime_entry_change_cb(GtkWidget *widget, GdkEventFocus *ev, t_datetime *dt)
       datetime_apply_format(dt, format, NULL);
     else if(widget == dt->time_format_entry)    /* or time */
       datetime_apply_format(dt, NULL, format);
+    else if(widget == dt->tooltip_format_entry)    /* or tooltip */
+      datetime_apply_tooltip(dt, format);
   }
   datetime_update(dt);
   return FALSE;
@@ -612,6 +614,38 @@ datetime_properties_dialog(XfcePanelPlugin *plugin, t_datetime * datetime)
   datetime->time_format_entry = entry;
 
   gtk_widget_show_all(datetime->time_frame);
+
+  /*
+   * tooltip frame
+   */
+  datetime->tooltip_frame = get_frame_box(_("Tooltip"), &bin);
+  gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dlg))), datetime->tooltip_frame,
+                     FALSE, FALSE, 0);
+
+  /* vbox */
+  vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+  gtk_container_add(GTK_CONTAINER(bin), vbox);
+
+  /* hbox */
+  hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+  gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
+
+  /* format label */
+  label = gtk_label_new(_("Format:"));
+  gtk_label_set_xalign (GTK_LABEL (label), 0.0f);
+  gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0);
+  gtk_size_group_add_widget(sg, label);
+
+  /* format entry */
+  entry = gtk_entry_new();
+  gtk_entry_set_text(GTK_ENTRY(entry), datetime->tooltip_format);
+  gtk_widget_set_halign (GTK_WIDGET (entry), GTK_ALIGN_END);
+  gtk_box_pack_start(GTK_BOX(hbox), entry, TRUE, TRUE, 0);
+  g_signal_connect (G_OBJECT(entry), "focus-out-event",
+                    G_CALLBACK (datetime_entry_change_cb), datetime);
+  datetime->tooltip_format_entry = entry;
+
+  gtk_widget_show_all(datetime->tooltip_frame);
 
   /* We're done! */
   g_signal_connect(dlg, "response",
